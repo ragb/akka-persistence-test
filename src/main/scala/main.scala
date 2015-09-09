@@ -19,7 +19,12 @@ object main extends App {
   store ! Command(1, 9)
   view ! Update(await=false)
   implicit val timeout = Timeout(5 seconds)
-  (view ? State).mapTo[Int] foreach println
+  val storeF = (store ? State).mapTo[Seq[Int]]
+  val viewF = (view ? State).mapTo[Int]
+  (storeF zip viewF) foreach { r =>
+  	val (seq, sum) = r
+  	println(s"State is $seq, sum is $sum")
+  }
   readLine()
   system.shutdown()
 }
@@ -60,6 +65,6 @@ class SumView extends PersistentView {
 
   def receive = {
     case State => sender ! state
-    case Event(value) => state = state +1
+    case Event(value) => state = state +value
   }
 }
